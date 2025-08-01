@@ -20,14 +20,10 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 	//сплит строки с правилами повторений
 	var rules []string
 
-	// if len(repeat) > 0 && (rune(repeat[0]) == 'd' || rune(repeat[0]) == 'y' || rune(repeat[0]) == 'w' || rune(repeat[0]) == 'm') {
-	// 	rules = strings.Split(repeat, " ")
-	// } else {
-	// 	return "", fmt.Errorf("incorrect data format: %w", err)
-	// }
 	if len(repeat) == 0 {
 		return "", fmt.Errorf("incorrect data format: %w", err)
 	}
+
 	switch repeat[0] {
 	case 'd', 'y', 'w', 'm':
 		rules = strings.Split(repeat, " ")
