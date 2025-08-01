@@ -16,24 +16,28 @@ const schema = `CREATE TABLE scheduler (
 				repeat VARCHAR(128)
 				);`
 
+var DB *sql.DB
+
 func Init(dbFile string) error {
-	_, err := os.Stat(dbFile)
-
-	var db *sql.DB
 	var install bool
-
-	if err != nil {
+	var err error
+	if _, err = os.Stat(dbFile); os.IsNotExist(err) {
 		install = true
+	} else if err != nil {
+		return fmt.Errorf("stat %q failed: %w", dbFile, err)
 	}
 
-	db, err = sql.Open("sqlite", dbFile)
+	DB, err = sql.Open("sqlite", dbFile)
 	if err != nil {
 		return fmt.Errorf("failed to connect database: %w", err)
 	}
-	defer db.Close()
+	err = DB.Ping()
+	if err != nil {
+		return fmt.Errorf("failed to ping database: %w", err)
+	}
 
 	if install {
-		_, err = db.Exec(schema)
+		_, err = DB.Exec(schema)
 		if err != nil {
 			return fmt.Errorf("failed create a database: %w", err)
 		}
