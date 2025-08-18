@@ -1,6 +1,7 @@
 package api
 
 import (
+	"GO_TODO-list/pkg/constants"
 	"GO_TODO-list/pkg/db"
 	"encoding/json"
 	"fmt"
@@ -14,10 +15,10 @@ func checkDate(task *db.Task) error {
 	var next string
 
 	if task.Date == "" {
-		task.Date = now.Format(DATE_FORMAT)
+		task.Date = now.Format(constants.DATE_FORMAT)
 	}
 
-	t, err := time.Parse(DATE_FORMAT, task.Date)
+	t, err := time.Parse(constants.DATE_FORMAT, task.Date)
 	if err != nil {
 		return fmt.Errorf("invalid date format: %w", err)
 	}
@@ -31,12 +32,12 @@ func checkDate(task *db.Task) error {
 
 	if t.After(now) {
 		if len(task.Repeat) == 0 {
-			task.Date = now.Format(DATE_FORMAT)
+			task.Date = now.Format(constants.DATE_FORMAT)
 		} else {
 			task.Date = next
 		}
 	} else {
-		task.Date = now.Format(DATE_FORMAT)
+		task.Date = now.Format(constants.DATE_FORMAT)
 	}
 	return nil
 }

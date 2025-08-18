@@ -1,8 +1,10 @@
 package db
 
 import (
+	"GO_TODO-list/pkg/constants"
 	"database/sql"
 	"fmt"
+	"time"
 
 	_ "modernc.org/sqlite"
 )
@@ -40,6 +42,69 @@ func Tasks(limit int) ([]*Task, error) {
 
 	var tasks []*Task
 
+	for rows.Next() {
+		var task Task
+		if err := rows.Scan(
+			&task.ID,
+			&task.Date,
+			&task.Title,
+			&task.Comment,
+			&task.Repeat,
+		); err != nil {
+			return nil, fmt.Errorf("failed to scan row: %w", err)
+		}
+		tasks = append(tasks, &task)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows iteration error: %w", err)
+	}
+
+	if tasks == nil {
+		tasks = []*Task{}
+	}
+	return tasks, nil
+}
+
+func SearchTasks(search string, limit int) ([]*Task, error) {
+	const searchDateFormat = "02.01.2006"
+	var (
+		query     string
+		queryArgs []interface{}
+	)
+
+	//формирование запроса по дате или строке в поиске
+	date, err := time.Parse(searchDateFormat, search)
+	if err == nil {
+		query = `SELECT id, date, title, comment, repeat 
+		FROM scheduler 
+		WHERE date = :date 
+		ORDER BY date ASC
+		LIMIT :limit`
+		queryArgs = append(queryArgs,
+			sql.Named("date", date.Format(constants.DATE_FORMAT)),
+			sql.Named("limit", limit))
+
+	} else {
+		query = `SELECT id, date, title, comment, repeat 
+		FROM scheduler 
+		WHERE title LIKE :search OR comment LIKE :search 
+		ORDER BY date ASC
+		LIMIT :limit`
+		like := "%" + search + "%"
+		queryArgs = append(queryArgs,
+			sql.Named("search", like),
+			sql.Named("limit", limit))
+	}
+
+	//выполнение запроса в БД
+	rows, err := DB.Query(query, queryArgs...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute search query: %w", err)
+	}
+	defer rows.Close()
+
+	var tasks []*Task
 	for rows.Next() {
 		var task Task
 		if err := rows.Scan(

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"GO_TODO-list/pkg/constants"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -8,11 +9,11 @@ import (
 	"time"
 )
 
-const DATE_FORMAT = "20060102"
+//const DATE_FORMAT = "20060102"
 
 func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 
-	dateStart, err := time.Parse(DATE_FORMAT, dstart)
+	dateStart, err := time.Parse(constants.DATE_FORMAT, dstart)
 	if err != nil {
 		return "", fmt.Errorf("failed to parsed date: %w", err)
 	}
@@ -83,7 +84,7 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 				}
 
 				if weekDays[wd] {
-					return dateStart.Format(DATE_FORMAT), nil
+					return dateStart.Format(constants.DATE_FORMAT), nil
 				}
 			}
 		}
@@ -150,7 +151,7 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 				(wantLast && day == lastDayOfMonth) ||
 				(wantPenultimate && day == penultDay) {
 				if monthYears[int(month)] {
-					return dateStart.Format(DATE_FORMAT), nil
+					return dateStart.Format(constants.DATE_FORMAT), nil
 				}
 			}
 		}
@@ -166,7 +167,7 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 		return "", fmt.Errorf("incorrect repetition rule: %s", rules[0])
 	}
 
-	return dateStart.Format(DATE_FORMAT), nil
+	return dateStart.Format(constants.DATE_FORMAT), nil
 }
 
 func nextDayHandler(w http.ResponseWriter, r *http.Request) {
@@ -174,7 +175,7 @@ func nextDayHandler(w http.ResponseWriter, r *http.Request) {
 	var now time.Time
 	var err error
 	if nowStr != "" {
-		now, err = time.Parse(DATE_FORMAT, nowStr)
+		now, err = time.Parse(constants.DATE_FORMAT, nowStr)
 		if err != nil {
 			http.Error(w, "invalid date format", http.StatusBadRequest)
 			return

@@ -4,6 +4,7 @@ import (
 	"GO_TODO-list/pkg/db"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -11,10 +12,33 @@ type TasksResp struct {
 	Tasks []*db.Task `json:"tasks"`
 }
 
+// func getTasksHandler(w http.ResponseWriter, r *http.Request) {
+// 	var tasks []*db.Task
+// 	limit := 50
+
+// 	tasks, err := db.Tasks(limit)
+// 	if err != nil {
+// 		WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": "Task Retrieval Error"})
+// 		return
+// 	}
+
+// 	WriteJSON(w, http.StatusOK, TasksResp{
+// 		Tasks: tasks,
+// 	})
+// }
+
 func getTasksHandler(w http.ResponseWriter, r *http.Request) {
 	var tasks []*db.Task
+	var err error
+	limit := 50
+	search := r.URL.Query().Get("search")
 
-	tasks, err := db.Tasks(50)
+	if strings.TrimSpace(search) == "" {
+		tasks, err = db.Tasks(limit)
+	} else {
+		tasks, err = db.SearchTasks(search, limit)
+	}
+
 	if err != nil {
 		WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": "Task Retrieval Error"})
 		return
