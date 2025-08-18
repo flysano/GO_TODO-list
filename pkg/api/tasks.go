@@ -3,6 +3,7 @@ package api
 import (
 	"GO_TODO-list/pkg/db"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 )
@@ -81,19 +82,25 @@ func updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 // отметка задачи выполненной
 func doneTaskHandler(w http.ResponseWriter, r *http.Request) {
 	//var task *db.Task
-	var nextDate string
+	//var nextDate string
 
 	id := r.URL.Query().Get("id")
 	if id == "" {
 		WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "Не указан идентификатор"})
 		return
 	}
+	//log
+	//fmt.Printf("Start doneTaskHandler for id=%s at %v\n", id, time.Now())
 
 	task, err := db.GetTask(id)
 	if err != nil {
+		//log
+		fmt.Printf("Error getting task: %v\n", err)
 		WriteJSON(w, http.StatusNotFound, map[string]string{"error": "task not found"})
 		return
 	}
+	//log
+	//fmt.Printf("Task before: %+v\n", task)
 
 	if task.Repeat == "" {
 		if err := db.DeleteTask(id); err != nil {
@@ -103,8 +110,17 @@ func doneTaskHandler(w http.ResponseWriter, r *http.Request) {
 		WriteJSON(w, http.StatusOK, struct{}{})
 
 	} else {
+		//now, _ := time.Parse(DATE_FORMAT, task.Date)
 		now := time.Now()
-		nextDate, err = NextDate(now, task.Date, task.Repeat)
+		//log
+		//fmt.Printf("Now: %v\n", now)
+		//normalizedNow := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+		//fmt.Printf("Normalized now: %v\n", normalizedNow)
+
+		nextDate, err := NextDate(now, task.Date, task.Repeat)
+		//log
+		//fmt.Printf("NextDate: %s, error: %v\n", nextDate, err)
+
 		if err != nil {
 			WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid repeat"})
 			return

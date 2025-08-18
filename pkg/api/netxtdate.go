@@ -12,13 +12,14 @@ const DATE_FORMAT = "20060102"
 
 // получение следующей даты задачи
 func NextDate(now time.Time, dstart string, repeat string) (string, error) {
-	//парсинг даты в time.Time
+	//приведение now к началу суток
+	//now = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+
 	dateStart, err := time.Parse(DATE_FORMAT, dstart)
 	if err != nil {
 		return "", fmt.Errorf("failed to parsed date: %w", err)
 	}
-
-	//сплит строки с правилами повторений
+	dateStart = time.Date(dateStart.Year(), dateStart.Month(), dateStart.Day(), 0, 0, 0, 0, dateStart.Location())
 	var rules []string
 
 	if len(repeat) == 0 {
@@ -32,6 +33,11 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 		return "", fmt.Errorf("incorrect data format: %w", err)
 	}
 
+	//	rules := strings.Split(repeat, " ")
+	if len(rules) == 0 {
+		return "", fmt.Errorf("empty repeat rule")
+	}
+
 	switch rules[0] {
 	case "d":
 		if len(rules) < 2 {
@@ -41,8 +47,8 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("data conversion error: %w", err)
 		}
-		if interval > 400 || interval <= 0 {
-			return "", fmt.Errorf("the incorrect length has been set for the delay of the event: d <= 400 && != 0. Set: %d", interval)
+		if interval <= 0 || interval > 400 {
+			return "", fmt.Errorf("interval out of range (1-400)")
 		}
 
 		for {
@@ -51,6 +57,28 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 				break
 			}
 		}
+	// case "d":
+	// 	if len(rules) < 2 {
+	// 		return "", fmt.Errorf("invalid d rule format")
+	// 	}
+
+	// 	interval, err := strconv.Atoi(rules[1])
+	// 	if err != nil {
+	// 		return "", fmt.Errorf("invalid interval: %w", err)
+	// 	}
+
+	// 	if interval <= 0 || interval > 400 {
+	// 		return "", fmt.Errorf("interval out of range (1-400)")
+	// 	}
+
+	// 	// Основная логика для дней
+	// 	next := dateStart
+	// 	for {
+	// 		next = next.AddDate(0, 0, interval)
+	// 		if next.After(now) {
+	// 			return next.Format(DATE_FORMAT), nil
+	// 		}
+	// 	}
 
 	case "w":
 		if len(rules) < 2 {

@@ -119,9 +119,7 @@ func UpdateTask(task *Task) error {
 }
 
 func UpdateDate(next string, id string) error {
-	query := `UPDATE scheduler 
-			SET date = :date,
-				WHERE id = :id`
+	query := `UPDATE scheduler SET date = :date WHERE id = :id`
 	res, err := DB.Exec(query,
 		sql.Named("date", next),
 		sql.Named("id", id),
