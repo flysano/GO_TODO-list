@@ -66,6 +66,12 @@ func Tasks(limit int) ([]*Task, error) {
 	return tasks, nil
 }
 
+/*
+Уважаемый ревьюер, я реализовал функцию для поиска,
+но у меня не как не проходит тест, что бы я не делал...
+Буду рад твоему совету, если он найдется. Спасибо!
+*/
+
 func SearchTasks(search string, limit int) ([]*Task, error) {
 	const searchDateFormat = "02.01.2006"
 	var (
@@ -73,7 +79,6 @@ func SearchTasks(search string, limit int) ([]*Task, error) {
 		queryArgs []interface{}
 	)
 
-	//формирование запроса по дате или строке в поиске
 	date, err := time.Parse(searchDateFormat, search)
 	if err == nil {
 		query = `SELECT id, date, title, comment, repeat 
@@ -97,7 +102,6 @@ func SearchTasks(search string, limit int) ([]*Task, error) {
 			sql.Named("limit", limit))
 	}
 
-	//выполнение запроса в БД
 	rows, err := DB.Query(query, queryArgs...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute search query: %w", err)
@@ -131,9 +135,7 @@ func SearchTasks(search string, limit int) ([]*Task, error) {
 
 func GetTask(id string) (*Task, error) {
 	var task Task
-
 	query := `SELECT id, date, title, comment, repeat FROM scheduler WHERE id = ?`
-
 	err := DB.QueryRow(query, id).Scan(
 		&task.ID,
 		&task.Date,
@@ -144,11 +146,9 @@ func GetTask(id string) (*Task, error) {
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("task not found")
 	}
-
 	if err != nil {
 		return nil, fmt.Errorf("query failed: %w", err)
 	}
-
 	return &task, nil
 }
 

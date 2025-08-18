@@ -9,10 +9,7 @@ import (
 	"time"
 )
 
-//const DATE_FORMAT = "20060102"
-
 func NextDate(now time.Time, dstart string, repeat string) (string, error) {
-
 	dateStart, err := time.Parse(constants.DATE_FORMAT, dstart)
 	if err != nil {
 		return "", fmt.Errorf("failed to parsed date: %w", err)
@@ -60,11 +57,8 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 		if len(rules) < 2 {
 			return "", fmt.Errorf("incorrect data format: %w", err)
 		}
-
 		var weekDays [8]bool
-
 		weekDayStr := strings.Split(rules[1], ",")
-
 		for _, wd := range weekDayStr {
 			d, err := strconv.Atoi(wd)
 			if err != nil || d < 1 || d > 7 {
@@ -75,7 +69,6 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 
 		for {
 			dateStart = dateStart.AddDate(0, 0, 1)
-
 			if dateStart.After(now) {
 				wd := int(dateStart.Weekday())
 				//корректировка индекса воскресенья с 0 на 7
@@ -93,12 +86,10 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 		if len(rules) < 2 {
 			return "", fmt.Errorf("incorrect data format: %w", err)
 		}
-
 		var dayMonth [32]bool
 		var monthYears [13]bool
 
 		daysMonthStr := strings.Split(rules[1], ",")
-
 		wantLast := false
 		wantPenultimate := false
 
@@ -128,7 +119,6 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 				}
 				monthYears[m] = true
 			}
-
 		} else {
 			for i := 1; i <= 12; i++ {
 				monthYears[i] = true
@@ -143,7 +133,6 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 			day := dateStart.Day()
 			month := dateStart.Month()
 			year := dateStart.Year()
-
 			lastDayOfMonth := time.Date(year, month+1, 0, 0, 0, 0, 0, time.UTC).Day()
 			penultDay := lastDayOfMonth - 1
 
@@ -198,5 +187,4 @@ func nextDayHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/plain")
 	fmt.Fprint(w, nextDate)
-
 }

@@ -2,7 +2,9 @@ package api
 
 import (
 	"GO_TODO-list/pkg/db"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -38,7 +40,6 @@ func getTasksHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		tasks, err = db.SearchTasks(search, limit)
 	}
-
 	if err != nil {
 		WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": "Task Retrieval Error"})
 		return
@@ -52,7 +53,7 @@ func getTasksHandler(w http.ResponseWriter, r *http.Request) {
 func getTaskHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 	if id == "" {
-		WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "no id"})
+		WriteJSON(w, http.StatusNotFound, map[string]string{"error": "no id"})
 		return
 	}
 
@@ -61,7 +62,6 @@ func getTaskHandler(w http.ResponseWriter, r *http.Request) {
 		WriteJSON(w, http.StatusNotFound, map[string]string{"error": "task not found"})
 		return
 	}
-
 	WriteJSON(w, http.StatusOK, task)
 }
 
@@ -73,29 +73,24 @@ func updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 		WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
 		return
 	}
-
 	if task.ID == "" {
 		WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "Не указан идентификатор задачи"})
 		return
 	}
-
 	if len(task.Title) == 0 {
 		WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "empty title"})
 		return
 	}
-
 	err = checkDate(&task)
 	if err != nil {
 		WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid date"})
 		return
 	}
-
 	err = db.UpdateTask(&task)
 	if err != nil {
-		WriteJSON(w, http.StatusNotFound, map[string]string{"error": "task not found"})
+		WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "task not found"})
 		return
 	}
-
 	WriteJSON(w, http.StatusOK, struct{}{})
 }
 
@@ -142,7 +137,11 @@ func deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := db.DeleteTask(id)
 	if err != nil {
-		WriteJSON(w, http.StatusNotFound, map[string]string{"error": "task not found"})
+		if errors.Is(err, sql.ErrNoRows) {
+			WriteJSON(w, http.StatusNotFound, map[string]string{"error": "task not found"})
+		} else {
+			WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+		}
 		return
 	}
 	WriteJSON(w, http.StatusOK, struct{}{})
