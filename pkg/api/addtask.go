@@ -56,13 +56,11 @@ func addTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//Проверить, что поле task.Title не пустое.
 	if len(task.Title) == 0 {
 		WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "empty title"})
 		return
 	}
 
-	//Проверить на корректность полученное значение task.Date.
 	err = checkDate(task)
 	if err != nil {
 		WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid date"})
@@ -70,7 +68,6 @@ func addTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var id int64
-	//Пришла очередь вызвать функцию db.AddTask(task), чтобы добавить задачу в базу данных.
 	id, err = db.AddTask(task)
 	if err != nil {
 		WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "error adding an task"})

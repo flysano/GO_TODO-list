@@ -10,6 +10,7 @@ import (
 
 const DATE_FORMAT = "20060102"
 
+// получение следующей даты задачи
 func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 	//парсинг даты в time.Time
 	dateStart, err := time.Parse(DATE_FORMAT, dstart)
