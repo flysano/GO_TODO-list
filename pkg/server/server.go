@@ -9,7 +9,7 @@ import (
 )
 
 func StartServer() error {
-	port := os.Getenv("TODO_PORT") //получаем порт из переменной окружения
+	port := os.Getenv("TODO_PORT")
 	if port == "" {
 		port = "7540"
 	}

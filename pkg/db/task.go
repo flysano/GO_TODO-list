@@ -61,9 +61,7 @@ func Tasks(limit int) ([]*Task, error) {
 	if tasks == nil {
 		tasks = []*Task{}
 	}
-
 	return tasks, nil
-
 }
 
 func GetTask(id string) (*Task, error) {
