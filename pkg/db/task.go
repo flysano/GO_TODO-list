@@ -3,6 +3,7 @@ package db
 import (
 	"GO_TODO-list/pkg/constants"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -202,6 +203,8 @@ func UpdateDate(next string, id string) error {
 	return nil
 }
 
+var ErrTaskNotFound = errors.New("task not found")
+
 func DeleteTask(id string) error {
 	query := `DELETE FROM scheduler WHERE id = :id`
 
@@ -216,7 +219,7 @@ func DeleteTask(id string) error {
 	}
 
 	if count == 0 {
-		return fmt.Errorf("task not found")
+		return ErrTaskNotFound
 	}
 	return nil
 }

@@ -2,9 +2,9 @@ package api
 
 import (
 	"GO_TODO-list/pkg/db"
-	"database/sql"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -45,6 +45,7 @@ func getTasksHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Printf("tasks received")
 	WriteJSON(w, http.StatusOK, TasksResp{
 		Tasks: tasks,
 	})
@@ -53,7 +54,7 @@ func getTasksHandler(w http.ResponseWriter, r *http.Request) {
 func getTaskHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 	if id == "" {
-		WriteJSON(w, http.StatusNotFound, map[string]string{"error": "no id"})
+		WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "no id"})
 		return
 	}
 
@@ -62,6 +63,7 @@ func getTaskHandler(w http.ResponseWriter, r *http.Request) {
 		WriteJSON(w, http.StatusNotFound, map[string]string{"error": "task not found"})
 		return
 	}
+	log.Printf("task received")
 	WriteJSON(w, http.StatusOK, task)
 }
 
@@ -74,35 +76,38 @@ func updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if task.ID == "" {
-		WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "Не указан идентификатор задачи"})
+		WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": "Не указан идентификатор задачи"})
 		return
 	}
 	if len(task.Title) == 0 {
-		WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "empty title"})
+		WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": "empty title"})
 		return
 	}
 	err = checkDate(&task)
 	if err != nil {
-		WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid date"})
+		WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": "invalid date"})
 		return
 	}
 	err = db.UpdateTask(&task)
 	if err != nil {
-		WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "task not found"})
+		WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": "task not found"})
 		return
 	}
+	log.Printf("task updated")
 	WriteJSON(w, http.StatusOK, struct{}{})
 }
 
 func doneTaskHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 	if id == "" {
+		log.Printf("invalid ID")
 		WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "Не указан идентификатор"})
 		return
 	}
 
 	task, err := db.GetTask(id)
 	if err != nil {
+		log.Printf("faild getting task: %v", err)
 		WriteJSON(w, http.StatusNotFound, map[string]string{"error": "task not found"})
 		return
 	}
@@ -129,7 +134,6 @@ func doneTaskHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		WriteJSON(w, http.StatusOK, struct{}{})
 	}
-
 }
 
 func deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
@@ -137,12 +141,13 @@ func deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := db.DeleteTask(id)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, db.ErrTaskNotFound) {
 			WriteJSON(w, http.StatusNotFound, map[string]string{"error": "task not found"})
 		} else {
 			WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal server error"})
 		}
 		return
 	}
+	log.Printf("task deleted")
 	WriteJSON(w, http.StatusOK, struct{}{})
 }

@@ -5,6 +5,7 @@ import (
 	"GO_TODO-list/pkg/db"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -42,10 +43,13 @@ func checkDate(task *db.Task) error {
 	return nil
 }
 
-func WriteJSON(w http.ResponseWriter, status int, data any) error {
+func WriteJSON(w http.ResponseWriter, status int, data any) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(status)
-	return json.NewEncoder(w).Encode(data)
+
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		log.Printf("(WriteJSON)Error encoding JSON: %v", err)
+	}
 }
 
 func addTaskHandler(w http.ResponseWriter, r *http.Request) {
@@ -53,17 +57,20 @@ func addTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&task)
 	if err != nil {
+		log.Printf("JSON decode error: %v", err)
 		WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
 		return
 	}
 
 	if len(task.Title) == 0 {
+		log.Printf("empty title")
 		WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "empty title"})
 		return
 	}
 
 	err = checkDate(task)
 	if err != nil {
+		log.Printf("date validation error for task '%s': %v", task.Title, err)
 		WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid date"})
 		return
 	}
@@ -71,16 +78,13 @@ func addTaskHandler(w http.ResponseWriter, r *http.Request) {
 	var id int64
 	id, err = db.AddTask(task)
 	if err != nil {
-		WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": "error adding an task"})
+		log.Printf("error adding task '%s': %v", task.Title, err)
+		WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to add task"})
 		return
 	}
 
 	idStr := strconv.FormatInt(id, 10)
 
-	err = WriteJSON(w, http.StatusCreated, map[string]string{"id": idStr})
-	if err != nil {
-		WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "failed to write JSON response"})
-		return
-	}
-
+	log.Printf("task added!")
+	WriteJSON(w, http.StatusCreated, map[string]string{"id": idStr})
 }
