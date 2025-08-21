@@ -1,0 +1,90 @@
+package api
+
+import (
+	"GO_TODO-list/pkg/constants"
+	"GO_TODO-list/pkg/db"
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+	"strconv"
+	"time"
+)
+
+func checkDate(task *db.Task) error {
+	now := time.Now()
+	var next string
+
+	if task.Date == "" {
+		task.Date = now.Format(constants.DATE_FORMAT)
+	}
+
+	t, err := time.Parse(constants.DATE_FORMAT, task.Date)
+	if err != nil {
+		return fmt.Errorf("invalid date format: %w", err)
+	}
+
+	if len(task.Repeat) > 0 {
+		next, err = NextDate(now, task.Date, task.Repeat)
+		if err != nil {
+			return fmt.Errorf("invalid input data: %w", err)
+		}
+	}
+
+	if t.After(now) {
+		if len(task.Repeat) == 0 {
+			task.Date = now.Format(constants.DATE_FORMAT)
+		} else {
+			task.Date = next
+		}
+	} else {
+		task.Date = now.Format(constants.DATE_FORMAT)
+	}
+	return nil
+}
+
+func WriteJSON(w http.ResponseWriter, status int, data any) {
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(status)
+
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		log.Printf("(WriteJSON)Error encoding JSON: %v", err)
+	}
+}
+
+func addTaskHandler(w http.ResponseWriter, r *http.Request) {
+	var task *db.Task
+
+	err := json.NewDecoder(r.Body).Decode(&task)
+	if err != nil {
+		log.Printf("JSON decode error: %v", err)
+		WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
+		return
+	}
+
+	if len(task.Title) == 0 {
+		log.Printf("empty title")
+		WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "empty title"})
+		return
+	}
+
+	err = checkDate(task)
+	if err != nil {
+		log.Printf("date validation error for task '%s': %v", task.Title, err)
+		WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid date"})
+		return
+	}
+
+	var id int64
+	id, err = db.AddTask(task)
+	if err != nil {
+		log.Printf("error adding task '%s': %v", task.Title, err)
+		WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to add task"})
+		return
+	}
+
+	idStr := strconv.FormatInt(id, 10)
+
+	log.Printf("task added!")
+	WriteJSON(w, http.StatusCreated, map[string]string{"id": idStr})
+}

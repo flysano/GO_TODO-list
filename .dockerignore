@@ -1,0 +1,9 @@
+.git
+.gitignore
+README.md
+Dockerfile
+.dockerignore
+*.db
+**/*_test.go
+tests/
+GO_TODO-list
